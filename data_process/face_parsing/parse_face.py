@@ -97,7 +97,7 @@ def parse_faces(img_list: list,
 
     res = []
     with torch.no_grad():
-        for idx, bgr_image in enumerate(tqdm(img_list)):
+        for idx, bgr_image in enumerate(tqdm(img_list, desc='Face Parsing')):
             # image = img.resize((512, 512), Image.BILINEAR)
             # image = image.convert("RGB")
             rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
@@ -150,7 +150,7 @@ class FaceParser:
 
         res = []
         with torch.no_grad():
-            for idx, bgr_image in enumerate(tqdm(img_list)):
+            for idx, bgr_image in enumerate(tqdm(img_list, desc='Face Parsing')):
                 # image = img.resize((512, 512), Image.BILINEAR)
                 # image = image.convert("RGB")
                 rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
