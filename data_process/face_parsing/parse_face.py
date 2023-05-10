@@ -76,8 +76,8 @@ def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array):
 
 def parse_faces(img_list: list,
                 ckpt: str = os.path.join(CURRENT_DIR, '79999_iter.pth'),
-                debug: bool = False,
-                save_dir: str = None) -> list:
+                debug_freq: int = 0,
+                debug_dir: str = None) -> list:
     """Parse face and torso."""
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -112,13 +112,13 @@ def parse_faces(img_list: list,
                                      dsize=bgr_image.shape[:2],
                                      interpolation=cv2.INTER_NEAREST)
             res.append(parsing_res)
-            if debug and save_dir is not None and idx % 10 == 0:
-                os.makedirs(save_dir, exist_ok=True)
+            if debug_freq > 0 and debug_dir is not None and idx % debug_freq == 0:
+                os.makedirs(debug_dir, exist_ok=True)
                 vis_im = visualize_parsing_maps(bgr_image=bgr_image,
                                                 parsing_res=parsing_res)
-                cv2.imwrite(os.path.join(save_dir, f'{idx}_parsed.jpg'), vis_im,
+                cv2.imwrite(os.path.join(debug_dir, f'{idx}_parsed.jpg'), vis_im,
                             [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-                cv2.imwrite(os.path.join(save_dir, f'{idx}.jpg'),
+                cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'),
                             bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
     return res
 
@@ -138,8 +138,8 @@ class FaceParser:
         self.net = net
 
     def parse_faces(self, img_list: list,
-                    debug: bool = False,
-                    save_dir: str = None) -> list:
+                    debug_freq: int = 0,
+                    debug_dir: str = None) -> list:
         """Parse face and torso."""
         to_tensor = transforms.Compose([
             transforms.ToTensor(),
@@ -163,12 +163,12 @@ class FaceParser:
                                         dsize=bgr_image.shape[:2],
                                         interpolation=cv2.INTER_NEAREST)
                 res.append(parsing_res)
-                if debug and save_dir is not None and idx % 10 == 0:
-                    os.makedirs(save_dir, exist_ok=True)
+                if debug_freq > 0 and debug_dir is not None and idx % debug_freq == 0:
+                    os.makedirs(debug_dir, exist_ok=True)
                     vis_im = visualize_parsing_maps(bgr_image=bgr_image,
                                                     parsing_res=parsing_res)
-                    cv2.imwrite(os.path.join(save_dir, f'{idx}_parsed.jpg'), vis_im,
+                    cv2.imwrite(os.path.join(debug_dir, f'{idx}_parsed.jpg'), vis_im,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-                    cv2.imwrite(os.path.join(save_dir, f'{idx}.jpg'),
+                    cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'),
                                 bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
         return res

@@ -1,12 +1,12 @@
 import os
 # import ffmpeg  # pip install ffmpeg-python
 
-def extract_wav_from_video(video_file, wav_file, overwrite_exist:bool=False):
+def extract_wav_from_video(video_file, wav_file, sample_rate:int=16000, overwrite_exist:bool=False):
     if overwrite_exist or not os.path.exists(wav_file):
         dirname = os.path.dirname(wav_file)
         os.makedirs(dirname, exist_ok=True)
 
-        extract_wav_cmd = f'ffmpeg -i {video_file} -f wav -ar 16000 {wav_file}'
+        extract_wav_cmd = f'ffmpeg -i {video_file} -f wav -ar {sample_rate} {wav_file}'
         os.system(extract_wav_cmd)
 
         # # Open the MP4 file using the ffmpeg.input() function
