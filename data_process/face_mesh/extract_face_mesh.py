@@ -42,17 +42,19 @@ def get_face_pose(landmarks: np.array, pcf: PCF, camera_matrix, dist_coeff, debu
         nose_endpoint2D = (int(nose_endpoint2D[0][0][0]), int(nose_endpoint2D[0][0][1]))
     return rotation_matrix, nose_point2D, nose_endpoint2D
 
-def transform_faceposes_to_cameraposes(face_poses:dict)->dict:
+
+def transform_faceposes_to_cameraposes(face_poses: dict) -> dict:
     camera_poses = dict()
     for i, p in face_poses.items():
+        p = np.array(p)
         rotation_matrix = np.eye(4, dtype=float)
         rot = p[:3, :3]
-        rot_inv = np.transpose(rot, (0,2,1))
+        rot_inv = np.transpose(rot, (1, 0))
         trans = p[:3, 3]
         trans_inv = np.matmul(rot_inv, trans)
         rotation_matrix[:3, :3] = rot_inv
         rotation_matrix[:3, 3] = trans_inv
-    
+
         camera_poses[i] = rotation_matrix
     return camera_poses
 
@@ -189,7 +191,3 @@ class MediapipeFaceMesh:
                     cv2.imwrite(os.path.join(debug_dir, f'{idx}_mesh.jpg'), annotated_image,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
         return lms, face_poses
-
-    @staticmethod
-    def transform_faceposes_to_cameraposes(face_poses:dict)->dict:
-        return transform_faceposes_to_cameraposes(face_poses)
