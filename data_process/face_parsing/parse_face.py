@@ -1,9 +1,11 @@
+import logging
 import os
 
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
+from tqdm import tqdm
 
 from .model import BiSeNet
 
@@ -52,13 +54,10 @@ CURRENT_DIR = os.path.dirname(__file__)
 
 def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array):
     # Colors for all 20 parts
-    part_colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 0, 85],
-                   [255, 0, 170], [0, 255, 0], [85, 255, 0], [170, 255, 0],
-                   [0, 255, 85], [0, 255, 170], [0, 0, 255], [85, 0, 255],
-                   [170, 0, 255], [0, 85, 255], [0, 170, 255], [255, 255, 0],
-                   [255, 255, 85], [255, 255, 170], [255, 0, 255],
-                   [255, 85, 255], [255, 170, 255], [0, 255, 255],
-                   [85, 255, 255], [170, 255, 255]]
+    part_colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 0, 85], [255, 0, 170], [0, 255, 0], [85, 255, 0],
+                   [170, 255, 0], [0, 255, 85], [0, 255, 170], [0, 0, 255], [85, 0, 255], [170, 0, 255], [0, 85, 255],
+                   [0, 170, 255], [255, 255, 0], [255, 255, 85], [255, 255, 170], [255, 0, 255], [255, 85, 255],
+                   [255, 170, 255], [0, 255, 255], [85, 255, 255], [170, 255, 255]]
     assert bgr_image.shape[:2] == parsing_res.shape
     vis_parsing_anno_color = np.zeros((*parsing_res.shape, 3)) + 255
 
@@ -75,6 +74,7 @@ def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array):
 
 
 def parse_faces(img_list: list,
+                parsing_dir: str = None,
                 ckpt: str = os.path.join(CURRENT_DIR, '79999_iter.pth'),
                 debug_freq: int = 0,
                 debug_dir: str = None) -> list:
@@ -97,33 +97,35 @@ def parse_faces(img_list: list,
 
     res = []
     with torch.no_grad():
-        for idx, bgr_image in enumerate(img_list):
+        for idx, bgr_image in enumerate(tqdm(img_list)):
             # image = img.resize((512, 512), Image.BILINEAR)
             # image = image.convert("RGB")
             rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
-            rgb_image = cv2.resize(rgb_image, (512, 512),
-                                   interpolation=cv2.INTER_AREA)
+            rgb_image = cv2.resize(rgb_image, (512, 512), interpolation=cv2.INTER_AREA)
 
             rgb_image = to_tensor(rgb_image).unsqueeze(0)
             rgb_image = rgb_image.to(device)
             out = net(rgb_image)[0]
             parsing_res = out.squeeze(0).cpu().numpy().argmax(0)
-            parsing_res = cv2.resize(parsing_res,
-                                     dsize=bgr_image.shape[:2],
-                                     interpolation=cv2.INTER_NEAREST)
-            res.append(parsing_res)
+            parsing_res = cv2.resize(parsing_res, dsize=bgr_image.shape[:2], interpolation=cv2.INTER_NEAREST)
+            if parsing_dir is not None:
+                cv2.imwrite(os.path.join(parsing_dir, f'{idx}.jpg'), parsing_res)
+            else:
+                res.append(parsing_res)
             if debug_freq > 0 and debug_dir is not None and idx % debug_freq == 0:
                 os.makedirs(debug_dir, exist_ok=True)
-                vis_im = visualize_parsing_maps(bgr_image=bgr_image,
-                                                parsing_res=parsing_res)
-                cv2.imwrite(os.path.join(debug_dir, f'{idx}_parsed.jpg'), vis_im,
-                            [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-                cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'),
-                            bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+                vis_im = visualize_parsing_maps(bgr_image=bgr_image, parsing_res=parsing_res)
+                cv2.imwrite(os.path.join(debug_dir, f'{idx}_parsed.jpg'), vis_im, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+                cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'), bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
     return res
 
+
 class FaceParser:
-    def __init__(self, n_classes:int=19, ckpt: str = os.path.join(CURRENT_DIR, '79999_iter.pth'),) -> None:
+    def __init__(
+            self,
+            n_classes: int = 19,
+            ckpt: str = os.path.join(CURRENT_DIR, '79999_iter.pth'),
+    ) -> None:
         if torch.cuda.is_available():
             device = torch.device("cuda")
         else:
@@ -137,9 +139,9 @@ class FaceParser:
         net.eval()
         self.net = net
 
-    def parse_faces(self, img_list: list,
-                    debug_freq: int = 0,
-                    debug_dir: str = None) -> list:
+        logging.info(f'\t-> FaceParser loaded from {ckpt}')
+
+    def parse_faces(self, img_list: list, parsing_dir: str = None, debug_freq: int = 0, debug_dir: str = None) -> list:
         """Parse face and torso."""
         to_tensor = transforms.Compose([
             transforms.ToTensor(),
@@ -148,27 +150,25 @@ class FaceParser:
 
         res = []
         with torch.no_grad():
-            for idx, bgr_image in enumerate(img_list):
+            for idx, bgr_image in enumerate(tqdm(img_list)):
                 # image = img.resize((512, 512), Image.BILINEAR)
                 # image = image.convert("RGB")
                 rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
-                rgb_image = cv2.resize(rgb_image, (512, 512),
-                                    interpolation=cv2.INTER_AREA)
+                rgb_image = cv2.resize(rgb_image, (512, 512), interpolation=cv2.INTER_AREA)
 
                 rgb_image = to_tensor(rgb_image).unsqueeze(0)
                 rgb_image = rgb_image.to(self.device)
                 out = self.net(rgb_image)[0]
                 parsing_res = out.squeeze(0).cpu().numpy().argmax(0)
-                parsing_res = cv2.resize(parsing_res,
-                                        dsize=bgr_image.shape[:2],
-                                        interpolation=cv2.INTER_NEAREST)
-                res.append(parsing_res)
+                parsing_res = cv2.resize(parsing_res, dsize=bgr_image.shape[:2], interpolation=cv2.INTER_NEAREST)
+                if parsing_dir is not None:
+                    cv2.imwrite(os.path.join(parsing_dir, f'{idx}.jpg'), parsing_res)
+                else:
+                    res.append(parsing_res)
                 if debug_freq > 0 and debug_dir is not None and idx % debug_freq == 0:
                     os.makedirs(debug_dir, exist_ok=True)
-                    vis_im = visualize_parsing_maps(bgr_image=bgr_image,
-                                                    parsing_res=parsing_res)
+                    vis_im = visualize_parsing_maps(bgr_image=bgr_image, parsing_res=parsing_res)
                     cv2.imwrite(os.path.join(debug_dir, f'{idx}_parsed.jpg'), vis_im,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-                    cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'),
-                                bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+                    cv2.imwrite(os.path.join(debug_dir, f'{idx}.jpg'), bgr_image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
         return res

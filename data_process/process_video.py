@@ -19,7 +19,7 @@ def set_logging(save_to_file: bool = False):
         logfile = f'./log/data_process/main_process.log'
         os.makedirs(f'./log/data_process/', exist_ok=True)
         handlers += [logging.FileHandler(logfile, 'w')]
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format=f'%(asctime)s - %(filename)s:%(lineno)s: ' + f'{BLUE}%(message)s{NOCOLOR}',
                         datefmt='%Y-%m-%d %H:%M:%S',
                         handlers=handlers)
@@ -31,12 +31,12 @@ def extract_imgs_from_video(video_file: str, ori_imgs_dir: str = None, resize_sh
     frame_list = list()
     cap = cv2.VideoCapture(str(video_file))
 
-    for frame_index, frame in enumerate(iter(cap.read, (False, None))):
+    for frame_index, (_, frame) in enumerate(iter(cap.read, (False, None))):
         if isinstance(resize_shape, tuple):
             frame = cv2.resize(frame, resize_shape)
             # frame = skimage.transform.resize(frame, resize_shape, preserve_range=True)
         if ori_imgs_dir is not None:
-            cv2.imwrite(os.path.join(ori_imgs_dir, f'{frame_index}.jpg'), frame)
+            cv2.imwrite(os.path.join(ori_imgs_dir, f'{frame_index}.jpg'), img=frame)
         frame_list.append(frame.astype(np.uint8))
 
     cap.release()
@@ -280,14 +280,14 @@ def process_video(
 
     if task == -1 or task == 1:
         logging.info('====== Extract Wav from Video ======')
-        from data_process.audio_process import extract_wav_from_video
+        from audio_process import extract_wav_from_video
         wav_file = os.path.join(base_dir, 'audio.wav')
         extract_wav_from_video(video_file=video_file, wav_file=wav_file)
 
     if task == -1 or task == 2:
         logging.info(f'====== Extract Audio Features: {audio_feat} ======')
         if audio_feat == 'hubert':
-            from data_process.audio_process.hubert import HubertFeatureExtractor
+            from audio_process.hubert import HubertFeatureExtractor
             hubert_extractor = HubertFeatureExtractor()
             hubert_features = hubert_extractor.extract_hubert_features(wav_file,
                                                                        target_len=video_len,
@@ -314,23 +314,26 @@ def process_video(
 
         logging.info('====== Detect Face Mesh & Track Pose ======')
         # Reference: https://github.com/Rassibassi/mediapipeFacegeometryPython
-        from face_mesh.extract_face_mesh import MediapipeFaceMesh
+        from face_mesh.extract_face_mesh import MediapipeFaceMesh, transform_faceposes_to_cameraposes
         mp_mesh = MediapipeFaceMesh()
         face_mesh, face_poses = mp_mesh.extract_face_mesh(img_list=img_list, debug_freq=debug_freq, debug_dir=debug_dir)
         file_ops.json_dump(face_mesh, os.path.join(ori_imgs_dir, 'face_mesh.json'))
         file_ops.json_dump(face_poses, os.path.join(ori_imgs_dir, 'face_poses.json'))
 
-        camera_poses = mp_mesh.transform_faceposes_to_cameraposes(faces_poses=face_poses)
+        camera_poses = transform_faceposes_to_cameraposes(face_poses=face_poses)
         file_ops.json_dump(camera_poses, os.path.join(ori_imgs_dir, 'camera_poses.json'))
+        del mp_mesh, face_mesh, face_poses, camera_poses
 
     if task == -1 or task == 5:
         img_list = img_list or extract_imgs_from_video(video_file=video_file, resize_shape=resize_shape)
         logging.info('====== Parse Face ======')
         from face_parsing.parse_face import FaceParser
         face_parser = FaceParser()
-        parsed_images = face_parser.parse_faces(img_list=img_list, debug_freq=debug_freq, debug_dir=debug_dir)
-        for i, img in enumerate(parsed_images):
-            cv2.imwrite(os.path.join(parsing_dir, f'{i}.jpg'), img)
+        parsed_images = face_parser.parse_faces(img_list=img_list,
+                                                parsing_dir=parsing_dir,
+                                                debug_freq=debug_freq,
+                                                debug_dir=debug_dir)
+        del face_parser, parsed_images
 
     if task == -1 or task == 6:
         logging.info('====== Extract Background ======')
