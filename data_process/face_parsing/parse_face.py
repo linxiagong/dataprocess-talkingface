@@ -95,6 +95,9 @@ def parse_faces(img_list: list,
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
+    if parsing_dir is not None:
+        logging.info(f'\t-> Parsed images save to {parsing_dir}')
+
     res = []
     with torch.no_grad():
         for idx, bgr_image in enumerate(tqdm(img_list, desc='Face Parsing')):
@@ -147,6 +150,9 @@ class FaceParser:
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
+
+        if parsing_dir is not None:
+            logging.info(f'\t-> Parsed images save to {parsing_dir}')
 
         res = []
         with torch.no_grad():

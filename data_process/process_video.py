@@ -56,8 +56,8 @@ def extract_background(base_dir: str):
     # nearest neighbors
     all_xys = np.mgrid[0:h, 0:w].reshape(2, -1).transpose()
     distss = []
-    for image_path in tqdm.tqdm(image_paths):
-        parse_img = cv2.imread(image_path.replace('ori_imgs', 'parsing').replace('.jpg', '.png'))
+    for image_path in tqdm.tqdm(image_paths, desc='Calculate Background'):
+        parse_img = cv2.imread(image_path.replace('ori_imgs', 'parsing'))
         bg = (parse_img[..., 0] == 255) & (parse_img[..., 1] == 255) & (parse_img[..., 2] == 255)
         fg_xys = np.stack(np.nonzero(~bg)).transpose(1, 0)
         nbrs = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(fg_xys)
@@ -103,7 +103,7 @@ def extract_torso_and_gt(base_dir: str):
     bg_image = cv2.imread(os.path.join(base_dir, 'bc.jpg'), cv2.IMREAD_UNCHANGED)
 
     image_paths = glob.glob(os.path.join(base_dir, 'ori_imgs', '*.jpg'))
-    for image_path in tqdm.tqdm(image_paths):
+    for image_path in tqdm.tqdm(image_paths, desc='Extract Torso & GT'):
         # read ori image
         ori_image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)  # [H, W, 3]
 
