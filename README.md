@@ -4,11 +4,16 @@ This is a ready-to-use data processing pipeline for talking avatar videos.
 todo: add the result video here
 
 ## Quick Start
-**Download necessary models:**
+&#9312; Install dependency
+```
+python3 -m pip install -r data_process/requirements.txt
+```
+
+**&#9313; Download necessary models:**
 
 Download Depth Checkpoints from https://github.com/harlanhong/CVPR2022-DaGAN#pre-trained-checkpoint, put the folder `depth_face_model_Voxceleb2_10w` under folder `data_process/face_depth/`.
 
-**Usage:**
+**&#9314; Usage:**
 ```python
 python data_process/porcess_video.py  
 ```
@@ -21,12 +26,13 @@ After the data processing, the data is in a structure of:
 ```
 For downstream training, here is the dataset (pytorch) for use: frames_dataset.py
 
-## Detailed Implementation
+## Implementation Details
 ### Audio Processing
 
 ### Face Landmarks and Mesh
+Mediapipe
 
 ### Face Parsing
-
+Reference: 
 ### Face Depth
-[DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN/tree/master)
+Reference: [DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN/tree/master)
