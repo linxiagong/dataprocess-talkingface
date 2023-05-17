@@ -45,6 +45,7 @@ def extract_imgs_from_video(video_file: str, ori_imgs_dir: str = None, resize_sh
 
 def extract_background(base_dir: str):
     from sklearn.neighbors import NearestNeighbors
+    from face_parsing.parse_face import background_labels
 
     image_paths = glob.glob(os.path.join(base_dir, 'ori_imgs', '*.jpg'))
     # only use 1/20 images to calculate
@@ -56,9 +57,9 @@ def extract_background(base_dir: str):
     # nearest neighbors
     all_xys = np.mgrid[0:h, 0:w].reshape(2, -1).transpose()
     distss = []
-    for image_path in tqdm.tqdm(image_paths, desc='Calculate Background'):
-        parse_img = cv2.imread(image_path.replace('ori_imgs', 'parsing'))
-        bg = (parse_img[..., 0] == 255) & (parse_img[..., 1] == 255) & (parse_img[..., 2] == 255)
+    for image_path in tqdm.tqdm(image_paths, desc='Calculate Distance'):
+        parse_img = np.load(image_path.replace('ori_imgs', 'parsing').replace('jpg', 'npy'))
+        bg = np.isin(parse_img, background_labels)
         fg_xys = np.stack(np.nonzero(~bg)).transpose(1, 0)
         nbrs = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(fg_xys)
         dists, _ = nbrs.kneighbors(all_xys)
@@ -85,7 +86,7 @@ def extract_background(base_dir: str):
 
     max_dist = max_dist.reshape(h, w)
     bc_pixs = max_dist > 5
-    bg_xys = np.stack(np.nonzero(~bc_pixs)).transpose()
+    bg_xys = np.stack(np.nonzero(~bc_pixs)).transpose()  # foreground in fact
     fg_xys = np.stack(np.nonzero(bc_pixs)).transpose()
     nbrs = NearestNeighbors(n_neighbors=1, algorithm='kd_tree').fit(fg_xys)
     distances, indices = nbrs.kneighbors(bg_xys)
@@ -93,12 +94,13 @@ def extract_background(base_dir: str):
     bc_img[bg_xys[:, 0], bg_xys[:, 1], :] = bc_img[bg_fg_xys[:, 0], bg_fg_xys[:, 1], :]
 
     cv2.imwrite(os.path.join(base_dir, 'bc.jpg'), bc_img)
-
+    logging.info(f"\t-> Background file saved to {os.path.join(base_dir, 'bc.jpg')}")
     return bc_img
 
 
 def extract_torso_and_gt(base_dir: str):
     from scipy.ndimage import binary_erosion, binary_dilation
+    from face_parsing.parse_face import background_labels, head_labels, neck_labels, torso_labels
     # load bg
     bg_image = cv2.imread(os.path.join(base_dir, 'bc.jpg'), cv2.IMREAD_UNCHANGED)
 
@@ -108,11 +110,11 @@ def extract_torso_and_gt(base_dir: str):
         ori_image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)  # [H, W, 3]
 
         # read semantics
-        seg = cv2.imread(image_path.replace('ori_imgs', 'parsing').replace('.jpg', '.png'))
-        head_part = (seg[..., 0] == 255) & (seg[..., 1] == 0) & (seg[..., 2] == 0)
-        neck_part = (seg[..., 0] == 0) & (seg[..., 1] == 255) & (seg[..., 2] == 0)
-        torso_part = (seg[..., 0] == 0) & (seg[..., 1] == 0) & (seg[..., 2] == 255)
-        bg_part = (seg[..., 0] == 255) & (seg[..., 1] == 255) & (seg[..., 2] == 255)
+        seg = np.load(image_path.replace('ori_imgs', 'parsing').replace('jpg', 'npy'))
+        head_part = np.isin(seg, head_labels)
+        neck_part = np.isin(seg, neck_labels)
+        torso_part = np.isin(seg, torso_labels)
+        bg_part = np.isin(seg, background_labels)
 
         # get gt image
         gt_image = ori_image.copy()
@@ -345,12 +347,13 @@ def process_video(
         extract_torso_and_gt(base_dir=base_dir)
 
     if task == -1 or task == 8:
+        img_list = img_list or extract_imgs_from_video(video_file=video_file, resize_shape=resize_shape)
         logging.info('====== Extract Depth ======')
         from face_depth import DaganFaceDepth
         dagan_depth = DaganFaceDepth()
         face_depth = dagan_depth.extract_face_depth(img_list=img_list, debug=True, save_dir=debug_dir)
         for i, d in enumerate(face_depth):
-            np.save(os.path.join(depth_dir, f'{i}_depth.npy'), d)
+            np.save(os.path.join(depth_dir, f'{i}.npy'), d)
 
     if task == -1 or task == 9:
         logging.info('====== Save transforms.json ======')

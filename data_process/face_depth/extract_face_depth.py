@@ -17,14 +17,21 @@ import numpy as np
 import PIL.Image as pil
 import torch
 from torchvision import transforms
+import tqdm
 
 from . import networks
 from .layers import disp_to_depth
 
-# from utils import download_model_if_doesnt_exist
-
 CURRENT_DIR = os.path.dirname(__file__)
 
+def check_ckpt(ckpt):
+    source_url = 'https://github.com/harlanhong/CVPR2022-DaGAN#pre-trained-checkpoint'
+    encoder_path = os.path.join(ckpt, "encoder.pth")
+    depth_decoder_path = os.path.join(ckpt, "depth.pth")
+    if not os.path.exists(encoder_path):
+        raise FileNotFoundError(f'{encoder_path} not Found. Please download it from {source_url}')
+    if not os.path.exists(encoder_path):
+        raise FileNotFoundError(f'{depth_decoder_path} not Found. Please download it from {source_url}')
 
 def extract_face_depth(img_list: list,
                        ckpt: str = os.path.join(CURRENT_DIR, 'depth_face_model_Voxceleb2_10w'),
@@ -38,13 +45,12 @@ def extract_face_depth(img_list: list,
     else:
         device = torch.device("cpu")
 
-    # download_model_if_doesnt_exist(ckpt)
-    logging.debug(f"-> Loading model from {ckpt}")
+    check_ckpt(ckpt)
+    logging.info(f"\t-> Loading pretrained model from {ckpt}")
     encoder_path = os.path.join(ckpt, "encoder.pth")
     depth_decoder_path = os.path.join(ckpt, "depth.pth")
 
     # LOADING PRETRAINED MODEL
-    logging.debug("   Loading pretrained encoder")
     encoder = networks.ResnetEncoder(num_layers, False)
     loaded_dict_enc = torch.load(encoder_path, map_location=device)
 
@@ -70,7 +76,7 @@ def extract_face_depth(img_list: list,
     res = []
     # PREDICTING ON EACH IMAGE IN TURN
     with torch.no_grad():
-        for idx, bgr_image in enumerate(img_list):
+        for idx, bgr_image in enumerate(tqdm.tqdm(img_list, desc='Predict Depth')):
             orignal_size = bgr_image.shape[:2]
             rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
 
@@ -120,7 +126,7 @@ class DaganFaceDepth:
             device = torch.device("cpu")
         self.device = device
 
-        # download_model_if_doesnt_exist(ckpt)
+        check_ckpt(ckpt)
         logging.debug(f"-> Loading model from {ckpt}")
         encoder_path = os.path.join(ckpt, "encoder.pth")
         depth_decoder_path = os.path.join(ckpt, "depth.pth")
@@ -152,12 +158,12 @@ class DaganFaceDepth:
     def extract_face_depth(self, img_list: list, debug: bool = False, save_dir: str = None):
         """Function to predict for a single image or folder of images
         """
-        logging.debug(f"-> Predicting on {len(img_list)} images")
+        logging.debug(f"-> Predict depth of {len(img_list)} images")
 
         res = []
         # PREDICTING ON EACH IMAGE IN TURN
         with torch.no_grad():
-            for idx, bgr_image in enumerate(img_list):
+            for idx, bgr_image in enumerate(tqdm.tqdm(img_list, desc='Predict Depth')):
                 orignal_size = bgr_image.shape[:2]
                 rgb_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
 
