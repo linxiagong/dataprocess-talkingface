@@ -220,7 +220,7 @@ def extract_torso_and_gt(base_dir: str):
 def save_transform(base_dir: str):
     with open(os.path.join(base_dir, 'ori_imgs', 'camera_poses.json'), 'r') as f:
         camera_poses = json.load(f)
-    valid_ids = camera_poses.keys()
+    valid_ids = list(camera_poses.keys())
 
     # read one image to get H/W
     tmp_image = cv2.imread(os.path.join(base_dir, 'ori_imgs', f'{valid_ids[0]}.jpg'), cv2.IMREAD_UNCHANGED)  # [H, W, 3]
