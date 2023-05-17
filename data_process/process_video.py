@@ -318,9 +318,10 @@ def process_video(
         # Reference: https://github.com/Rassibassi/mediapipeFacegeometryPython
         from face_mesh.extract_face_mesh import MediapipeFaceMesh, transform_faceposes_to_cameraposes
         mp_mesh = MediapipeFaceMesh()
-        face_mesh, face_poses = mp_mesh.extract_face_mesh(img_list=img_list, debug_freq=debug_freq, debug_dir=debug_dir)
+        face_mesh, face_poses, nodes_points = mp_mesh.extract_face_mesh(img_list=img_list, debug_freq=debug_freq, debug_dir=debug_dir)
         file_ops.json_dump(face_mesh, os.path.join(ori_imgs_dir, 'face_mesh.json'))
         file_ops.json_dump(face_poses, os.path.join(ori_imgs_dir, 'face_poses.json'))
+        file_ops.json_dump(nodes_points, os.path.join(ori_imgs_dir, 'nodes_points.json'))
 
         camera_poses = transform_faceposes_to_cameraposes(face_poses=face_poses)
         file_ops.json_dump(camera_poses, os.path.join(ori_imgs_dir, 'camera_poses.json'))

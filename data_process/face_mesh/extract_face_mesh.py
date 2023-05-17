@@ -4,6 +4,7 @@ from typing import Tuple
 import cv2
 import mediapipe as mp
 import numpy as np
+import tqdm
 
 from .face_geometry import (PCF, canonical_metric_landmarks, get_metric_landmarks, procrustes_landmark_basis)
 
@@ -34,12 +35,11 @@ def get_face_pose(landmarks: np.array, pcf: PCF, camera_matrix, dist_coeff, debu
     rotation_matrix[:3, :3], _ = cv2.Rodrigues(rotation_vector)
     rotation_matrix[:3, 3] = translation_vector.T
 
-    nose_point2D, nose_endpoint2D = (0, 0), (0, 0)
-    if debug:
-        nose_point2D = (int(image_points[0][0]), int(image_points[0][1]))
-        (nose_endpoint2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 25.0)]), rotation_vector,
-                                                        translation_vector, camera_matrix, dist_coeff)
-        nose_endpoint2D = (int(nose_endpoint2D[0][0][0]), int(nose_endpoint2D[0][0][1]))
+    # nose points
+    nose_point2D = (int(image_points[0][0]), int(image_points[0][1]))
+    (nose_endpoint2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 25.0)]), rotation_vector,
+                                                    translation_vector, camera_matrix, dist_coeff)
+    nose_endpoint2D = (int(nose_endpoint2D[0][0][0]), int(nose_endpoint2D[0][0][1]))
     return rotation_matrix, nose_point2D, nose_endpoint2D
 
 
@@ -69,6 +69,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
 
     lms = dict()
     face_poses = dict()
+    nodes_points = dict()
     images = []
 
     with mp_face_mesh.FaceMesh(static_image_mode=False,
@@ -76,7 +77,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
                                refine_landmarks=False,
                                min_detection_confidence=0.5,
                                min_tracking_confidence=0.5) as face_mesh:
-        for idx, bgr_image in enumerate(img_list):
+        for idx, bgr_image in enumerate(tqdm.tqdm(img_list, desc='Calculate Mesh')):
 
             # image = cv2.imread(file)
             # Convert the BGR image to RGB before processing.
@@ -105,6 +106,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
                                                                                dist_coeff=dist_coeff,
                                                                                debug=debug)
                 face_poses[idx] = rotation_matrix
+                nodes_points[idx] = (nose_point2D, nose_endpoint2D)
 
                 # Draw the annotated images
                 if debug and debug_dir is not None and idx % debug_freq == 0:
@@ -124,7 +126,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
                     annotated_image = cv2.line(annotated_image, nose_point2D, nose_endpoint2D, (255, 0, 0), 2)
                     cv2.imwrite(os.path.join(debug_dir, f'{idx}_mesh.jpg'), annotated_image,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-    return lms, face_poses
+    return lms, face_poses, nodes_points
 
 
 class MediapipeFaceMesh:
@@ -141,7 +143,8 @@ class MediapipeFaceMesh:
 
         lms = dict()
         face_poses = dict()
-        for idx, bgr_image in enumerate(img_list):
+        nodes_points = dict()
+        for idx, bgr_image in enumerate(tqdm.tqdm(img_list, desc='Calculate Mesh')):
 
             # image = cv2.imread(file)
             # Convert the BGR image to RGB before processing.
@@ -171,6 +174,7 @@ class MediapipeFaceMesh:
                                                                                dist_coeff=dist_coeff,
                                                                                debug=debug)
                 face_poses[idx] = rotation_matrix
+                nodes_points[idx] = (nose_point2D, nose_endpoint2D)
 
                 # Draw the annotated images
                 if debug_freq > 0 and debug_dir is not None and idx % debug_freq == 0:
@@ -190,4 +194,4 @@ class MediapipeFaceMesh:
                     annotated_image = cv2.line(annotated_image, nose_point2D, nose_endpoint2D, (255, 0, 0), 2)
                     cv2.imwrite(os.path.join(debug_dir, f'{idx}_mesh.jpg'), annotated_image,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-        return lms, face_poses
+        return lms, face_poses, nodes_points

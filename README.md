@@ -11,7 +11,7 @@ python3 -m pip install -r data_process/requirements.txt
 
 **&#9313; Download necessary models:**
 
-Download Depth Checkpoints from https://github.com/harlanhong/CVPR2022-DaGAN#pre-trained-checkpoint, put the folder `depth_face_model_Voxceleb2_10w` under folder `data_process/face_depth/`.
+Download Depth Checkpoints of [DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN#pre-trained-checkpoint), put the folder `depth_face_model_Voxceleb2_10w` under folder `data_process/face_depth/`.
 
 **&#9314; Usage:**
 ```python
