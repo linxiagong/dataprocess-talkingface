@@ -12,7 +12,17 @@ python3 -m pip install -r data_process/requirements.txt
 **&#9313; Download necessary models:**
 
 Download Depth Checkpoints of [DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN#pre-trained-checkpoint), put the folder `depth_face_model_Voxceleb2_10w` under folder `data_process/face_depth/`.
-
+```
+└── data_process
+    └── face_depth
+        └── depth_face_model_Voxceleb2_10w
+            ├── depth.pth
+            └── encoder.pth
+        ├── extract_face_depth.py
+        └── ...
+    ├── face_mesh
+    └── ...
+```
 **&#9314; Usage:**
 ```python
 python data_process/porcess_video.py  
