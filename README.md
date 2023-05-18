@@ -63,5 +63,5 @@ Reference: [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyT
 Reference: [DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN/tree/master)
 
 ## Reference
-- ADNeRF
-- RADNeRF
+- AD-NeRF [Project](https://yudongguo.github.io/ADNeRF/)
+- RAD-NeRF
