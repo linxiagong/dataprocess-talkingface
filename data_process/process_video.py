@@ -307,6 +307,7 @@ def process_video(
     if task == -1 or task == 4:
         img_list = img_list or extract_imgs_from_video(video_file=video_file, resize_shape=resize_shape)
         # logging.info('====== Detect Face Landmarks ======')
+        # from data_process.face_landmark import FaceAlignmentLandmark
         # (deprecated caz face-alignment is too slow, use mediapipe only)
         # fa2d = FaceAlignmentLandmark(lms_type='2D')
         # fa2d_lms = fa2d.generate_face_alignment_lms(img_list=img_list)

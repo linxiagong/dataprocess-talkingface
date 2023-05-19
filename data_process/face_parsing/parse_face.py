@@ -94,7 +94,7 @@ def label_to_annotation_simple(label: int):
 #         cv2.imwrite(save_path, vis_im)
 
 
-def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array):
+def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array, debug=True):
     assert bgr_image.shape[:2] == parsing_res.shape
     vis_parsing_anno_color = np.zeros((*parsing_res.shape, 3)) + 255
 
@@ -107,8 +107,11 @@ def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array):
     vis_parsing_anno_color = vis_parsing_anno_color.astype(np.uint8)
 
     vis_im = cv2.addWeighted(bgr_image, 0.4, vis_parsing_anno_color, 0.6, 0)
-    # return vis_im
-    return np.concatenate((bgr_image, vis_im), axis=1)
+
+    if debug:
+        return np.concatenate((bgr_image, vis_im), axis=1)
+    else:
+        return vis_im
 
 
 def parse_faces(img_list: list,

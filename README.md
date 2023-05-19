@@ -1,7 +1,7 @@
 # Talking Face - Data Processing Pipeline 
 This is a ready-to-use data processing pipeline for talking avatar videos.
 
-todo: add the result video here
+https://user-images.githubusercontent.com/16673393/239467751-e8f13542-ca3c-433f-831d-6fa748d056f0.mp4
 
 
 | This pipeline include: | By default, set `task=-1` to run all subtasks|
@@ -20,7 +20,8 @@ todo: add the result video here
 ## Quick Start
 &#9312; Install dependency
 ```
-python3 -m pip install -r data_process/requirements.txt
+$ python3 -m pip install -r requirements.txt
+$ sudo apt-get install ffmpeg
 ```
 
 **&#9313; Download necessary models:**
@@ -46,16 +47,45 @@ By default, the model uses GPU if available. If you want it not to use GPU, set 
 ### Pytorch Dataset for use after data processing
 After the data processing, the data is in a structure of:
 ```bash
--fd
+└── base_dir
+    ├── video.mp4
+    ├── audio.wav
+    └── ori_imgs
+        ├── i.jpg
+        ├── ...
+        ├── camera_poses.json
+        ├── face_mesh.json
+        ├── face_poses.json
+        └── nodes_points.json
+    └── parsing
+        ├── i.npy
+        └── ...
+    ├── bc.jpg
+    └── gt_imgs
+        ├── i.jpg
+        └── ...
+    └── torso_imgs
+        ├── i.png
+        └── ...
+    └── depth
+        ├── i.npy
+        └── ...
+    ├── transforms_train.json
+    └── transforms_val.json
+
+
 ```
-For downstream training, here is the dataset (pytorch) for use: frames_dataset.py
+*TODO* a dataset.py for late use
 
 ## Implementation Details
 ### Audio Processing
+Reference: HuBert
+*TODO* Support more features
 
 ### Face Landmarks and Mesh
-Reference: Mediapipe
-We found Mediapipe works better than landmarks
+Reference: Mediapipe Face Landmark \[[Doc](https://developers.google.com/mediapipe/solutions/vision/face_landmarker)\] \[[Github](https://github.com/google/mediapipe/tree/master)\]
+
+`Mediapipe` works better than `face-alignment`.
 
 ### Face Parsing
 Reference: [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch)
@@ -63,5 +93,5 @@ Reference: [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyT
 Reference: [DaGAN](https://github.com/harlanhong/CVPR2022-DaGAN/tree/master)
 
 ## Reference
-- AD-NeRF [Project](https://yudongguo.github.io/ADNeRF/)
-- RAD-NeRF
+- AD-NeRF [\[Project Link\]](https://yudongguo.github.io/ADNeRF/)
+- RAD-NeRF [\[Project Link\]](https://github.com/ashawkey/RAD-NeRF)
