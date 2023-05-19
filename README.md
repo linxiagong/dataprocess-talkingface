@@ -1,7 +1,7 @@
 # Talking Face - Data Processing Pipeline 
 This is a ready-to-use data processing pipeline for talking avatar videos.
 
-https://user-images.githubusercontent.com/16673393/239467751-e8f13542-ca3c-433f-831d-6fa748d056f0.mp4
+https://user-images.githubusercontent.com/16673393/239469571-15a013ef-2abe-443f-bf02-89bab11a5797.mp4
 
 
 | This pipeline include: | By default, set `task=-1` to run all subtasks|
