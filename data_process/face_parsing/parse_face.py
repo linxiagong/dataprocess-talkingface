@@ -93,7 +93,6 @@ def label_to_annotation_simple(label: int):
 #     if save_im:
 #         cv2.imwrite(save_path, vis_im)
 
-
 def visualize_parsing_maps(bgr_image: np.array, parsing_res: np.array, debug=True):
     assert bgr_image.shape[:2] == parsing_res.shape
     vis_parsing_anno_color = np.zeros((*parsing_res.shape, 3)) + 255

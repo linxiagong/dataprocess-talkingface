@@ -35,6 +35,7 @@ def get_face_pose(landmarks: np.array, pcf: PCF, camera_matrix, dist_coeff, debu
     rotation_matrix[:3, :3], _ = cv2.Rodrigues(rotation_vector)
     rotation_matrix[:3, 3] = translation_vector.T
 
+
     # nose points
     nose_point2D = (int(image_points[0][0]), int(image_points[0][1]))
     (nose_endpoint2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 25.0)]), rotation_vector,
@@ -70,6 +71,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
     lms = dict()
     face_poses = dict()
     nodes_points = dict()
+
     images = []
 
     with mp_face_mesh.FaceMesh(static_image_mode=False,
@@ -127,6 +129,7 @@ def extract_face_mesh(img_list: list, debug_freq: int = 0, debug_dir: str = None
                     cv2.imwrite(os.path.join(debug_dir, f'{idx}_mesh.jpg'), annotated_image,
                                 [int(cv2.IMWRITE_JPEG_QUALITY), 100])
     return lms, face_poses, nodes_points
+
 
 
 class MediapipeFaceMesh:

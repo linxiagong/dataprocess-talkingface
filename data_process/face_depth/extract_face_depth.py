@@ -22,6 +22,7 @@ import tqdm
 from . import networks
 from .layers import disp_to_depth
 
+
 CURRENT_DIR = os.path.dirname(__file__)
 
 def check_ckpt(ckpt):
@@ -47,6 +48,7 @@ def extract_face_depth(img_list: list,
 
     check_ckpt(ckpt)
     logging.info(f"\t-> Loading pretrained model from {ckpt}")
+
     encoder_path = os.path.join(ckpt, "encoder.pth")
     depth_decoder_path = os.path.join(ckpt, "depth.pth")
 
